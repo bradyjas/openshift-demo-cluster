@@ -1,0 +1,67 @@
+---
+- name: Prepare OpenShift nodes
+  hosts: nodes
+  gather_facts: no
+
+###
+  pre_tasks:
+  - name: Install python2
+    raw: sudo yum install -y python
+
+###
+  tasks:
+  - name: Change hostname
+    hostname:
+      name: {{ openshift_hostname }}
+
+  - name: Install epel-release
+    yum: state=latest name=epel-release
+
+  - name: Update yum packages
+    yum: state=latest name=*
+
+  - name: Install yum packages
+    yum: state=latest name={{ item }}
+    with_items:
+    - docker
+    - NetworkManager
+    - tmux
+    - net-tools
+    - httpd-tools
+    - bind-utils
+    - nodejs
+    - npm
+
+  - name: Install npm packages
+    npm: state=latest global=yes name={{ item }}
+    with_items:
+    - vtop
+
+  - name: Enable and start NetworkManager
+    systemd: enabled=yes state=started name=NetworkManager
+
+  - name: Create Docker storage conf file
+    copy:
+      content: "DEVS=/dev/xvdb\nVG=docker-vg\n"
+      #content: "DEVS=/dev/nvme1n1\nVG=docker-vg\n"
+      dest: /etc/sysconfig/docker-storage-setup
+
+  - name: Run docker-storage-setup
+    shell: docker-storage-setup
+
+  - name: Enable and start docker
+    systemd: enabled=yes state=started name=docker
+
+###
+  post_tasks:
+  - name: Reboot nodes
+    shell: "sleep 3 && reboot"
+    async: 1
+    poll: 0
+
+  - name: Wait for reboot to finish
+    wait_for_connection:
+      connect_timeout: 20
+      sleep: 5
+      delay: 5
+      timeout: 300

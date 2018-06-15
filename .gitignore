@@ -1,0 +1,14 @@
+# Terraform compiled files
+*.tfstate
+*.tfstate.*.backup
+*.tfstate.backup
+planfile
+
+# Terraform private values
+*.tfvars
+
+# Terraform module directory
+.terraform/
+
+# Ansible retry files
+*.retry
