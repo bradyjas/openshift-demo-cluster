@@ -1,8 +1,8 @@
 #### Outputs ####
 
-output "bastion-public-dns" {
-  value = "${aws_instance.bastion.public_dns}"
-}
+# output "bastion-public-dns" {
+#   value = "${aws_instance.bastion.public_dns}"
+# }
 
 output "master-public-ip" {
   value = "${aws_instance.master.public_ip}"

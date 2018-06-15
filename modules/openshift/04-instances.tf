@@ -9,44 +9,43 @@ resource "aws_key_pair" "ocp" {
 ## Instances
 
 # Bastion
-resource "aws_instance" "bastion" {
-  ami                         = "${data.aws_ami.centos7.id}"
-  instance_type               = "${var.instance_types["bastion"]}"
-  key_name                    = "${aws_key_pair.ocp.key_name}"
-  availability_zone           = "${data.aws_availability_zones.available.names[0]}"
-  subnet_id                   = "${aws_subnet.ocp.id}"
-  vpc_security_group_ids      = ["${aws_security_group.bastion.id}"]
-  associate_public_ip_address = true
+# resource "aws_instance" "bastion" {
+#   ami                         = "${data.aws_ami.centos7.id}"
+#   instance_type               = "${var.instance_types["bastion"]}"
+#   key_name                    = "${aws_key_pair.ocp.key_name}"
+#   availability_zone           = "${data.aws_availability_zones.available.names[0]}"
+#   subnet_id                   = "${aws_subnet.ocp.id}"
+#   vpc_security_group_ids      = ["${aws_security_group.bastion.id}"]
+#   associate_public_ip_address = true
 
-  root_block_device {
-    volume_size = 8
-    volume_type = "gp2"
-  }
+#   root_block_device {
+#     volume_size = 8
+#     volume_type = "gp2"
+#   }
 
-  tags = "${merge(
-    local.common_tags,
-    map(
-      "Name", "${var.username}-ocp-bastion"
-    )
-  )}"
+#   tags = "${merge(
+#     local.common_tags,
+#     map(
+#       "Name", "${var.username}-ocp-bastion"
+#     )
+#   )}"
 
-  volume_tags = "${merge(
-    local.common_tags,
-    map(
-      "Name", "${var.username}-ocp-bastion"
-    )
-  )}"
-}
+#   volume_tags = "${merge(
+#     local.common_tags,
+#     map(
+#       "Name", "${var.username}-ocp-bastion"
+#     )
+#   )}"
+# }
 
 # Master
 resource "aws_instance" "master" {
-  ami                         = "${data.aws_ami.centos7.id}"
-  instance_type               = "${var.instance_types["master"]}"
-  key_name                    = "${aws_key_pair.ocp.key_name}"
-  availability_zone           = "${data.aws_availability_zones.available.names[0]}"
-  subnet_id                   = "${aws_subnet.ocp.id}"
-  vpc_security_group_ids      = ["${aws_security_group.master.id}"]
-  associate_public_ip_address = false
+  ami                    = "${data.aws_ami.centos7.id}"
+  instance_type          = "${var.instance_types["master"]}"
+  key_name               = "${aws_key_pair.ocp.key_name}"
+  availability_zone      = "${data.aws_availability_zones.available.names[0]}"
+  subnet_id              = "${aws_subnet.ocp.id}"
+  vpc_security_group_ids = ["${aws_security_group.master.id}"]
 
   root_block_device {
     volume_size = 8
@@ -58,6 +57,13 @@ resource "aws_instance" "master" {
     volume_size = 50
     volume_type = "gp2"
   }
+
+  user_data = <<-EOF
+    #cloud-config
+    hostname: master
+    fqdn: master.${var.local_domain_name}
+    manage_etc_hosts: true
+  EOF
 
   tags = "${merge(
     local.common_tags,
@@ -109,6 +115,13 @@ resource "aws_instance" "worker1" {
     volume_type = "gp2"
   }
 
+  user_data = <<-EOF
+    #cloud-config
+    hostname: worker1
+    fqdn: worker1.${var.local_domain_name}
+    manage_etc_hosts: true
+  EOF
+
   tags = "${merge(
     local.common_tags,
     map(
@@ -144,6 +157,13 @@ resource "aws_instance" "worker2" {
     volume_size = 50
     volume_type = "gp2"
   }
+
+  user_data = <<-EOF
+    #cloud-config
+    hostname: worker2
+    fqdn: worker2.${var.local_domain_name}
+    manage_etc_hosts: true
+  EOF
 
   tags = "${merge(
     local.common_tags,

@@ -35,8 +35,8 @@ variable "instance_types" {
   type        = "map"
 
   default = {
-    bastion = "t2.small"
-    master  = "t2.medium"
-    worker  = "t2.medium"
+    # bastion = "t2.small"
+    master = "t2.medium"
+    worker = "t2.medium"
   }
 }

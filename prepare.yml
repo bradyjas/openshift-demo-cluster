@@ -51,17 +51,3 @@
 
   - name: Enable and start docker
     systemd: enabled=yes state=started name=docker
-
-###
-  post_tasks:
-  - name: Reboot nodes
-    shell: "sleep 3 && reboot"
-    async: 1
-    poll: 0
-
-  - name: Wait for reboot to finish
-    wait_for_connection:
-      connect_timeout: 20
-      sleep: 5
-      delay: 5
-      timeout: 300
