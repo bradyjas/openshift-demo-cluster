@@ -37,3 +37,64 @@ little change.
 - Auto Scale Groups for OpenShift masters, etcd instances, and nodes
   - Scaling events handled by CloudWatch/Lambda/Ansible functions
 - IPv6
+
+
+## Starting a Cluster
+
+1. Create a `terraform.tfvars` file container your specific environment
+   details. Here's an example:
+
+```
+aws_profile = "acton-dev"
+aws_region = "us-west-1"
+local_domain_name = "ocp.local"
+username = "jbrady"
+public_key_path = "~/.ssh/aws-jbrady.pub"
+vpc_cidr = "10.10.0.0/28"
+subnet_cidr = "10.10.0.0/28"
+instance_types = {
+  master  = "t2.medium"
+  worker  = "t2.medium"
+}
+```
+
+2. Plan and apply the Terraform actions:
+
+```bash
+# Plan the actions
+terraform plan -out planfile
+
+# Analyse the plan results. If all looks good, apply:
+terraform apply planfile
+```
+
+3. Prepare the nodes
+
+```bash
+# Set a couple variables
+master=<public ip/name of master>
+privkey=<path to your private key>
+repourl=<URL of this repo>
+
+# Copy your private key to the master node
+scp -i ${privkey} ${privkey} centos@${master}:~/.ssh/$(basename ${privkey})
+
+# SSH into the master node
+ssh -i ${privkey} centos@${master}
+
+# Clone this and the OpenShift-Ansible repos
+git clone --depth 1 ${repourl} ~/openshift-demo-cluster
+git clone --depth 1 -b release-3.9 https://github.com/openshift/openshift-ansible.git ~/openshift-ansible
+cd ~/openshift-demo-cluster
+
+# Take a look at the inventory and make and changes needed
+vi inventory.ini
+
+# Run the prepare playbook
+ansible-playbook -i inventory.ini prepare.yml --key-file ${privkey}
+
+# Run the OpenShift-Ansible playbooks
+ansible-playbook -i inventory.ini ~/openshift-ansible/playbooks/pre --key-file ${privkey}
+ansible-playbook -c paramiko -i inventory.ini ~/openshift-ansible/playbooks/prerequisites.yml --key-file <private key>
+ansible-playbook -c paramiko -i inventory.ini ~/openshift-ansible/playbooks/deploy_cluster.yml --key-file <private key>
+```

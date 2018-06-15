@@ -62,7 +62,10 @@ resource "aws_instance" "master" {
     #cloud-config
     hostname: master
     fqdn: master.${var.local_domain_name}
-    manage_etc_hosts: true
+    runcmd:
+    - [ yum, install, -y, epel-release ]
+    - [ yum, update, -y ]
+    - [ yum, install, -y , git, ansible ]
   EOF
 
   tags = "${merge(
@@ -119,7 +122,6 @@ resource "aws_instance" "worker1" {
     #cloud-config
     hostname: worker1
     fqdn: worker1.${var.local_domain_name}
-    manage_etc_hosts: true
   EOF
 
   tags = "${merge(
@@ -162,7 +164,6 @@ resource "aws_instance" "worker2" {
     #cloud-config
     hostname: worker2
     fqdn: worker2.${var.local_domain_name}
-    manage_etc_hosts: true
   EOF
 
   tags = "${merge(
