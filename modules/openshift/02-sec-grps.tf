@@ -1,40 +1,5 @@
 #### Security Groups ####
 
-# Bastion Host
-resource "aws_security_group" "bastion" {
-  name        = "${var.username}-ocp-sg-basstion"
-  description = "Bastion Host"
-  vpc_id      = "${aws_vpc.ocp.id}"
-
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["${var.vpc_cidr}"]
-  }
-
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = "${merge(
-    local.common_tags,
-    map(
-      "Name", "${var.username}-ocp-sg-bastion"
-    )
-  )}"
-}
-
 # Master Node
 resource "aws_security_group" "master" {
   name        = "${var.username}-ocp-sg-master"

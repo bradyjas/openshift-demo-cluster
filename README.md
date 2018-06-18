@@ -45,11 +45,11 @@ little change.
    details. Here's an example:
 
 ```
-aws_profile = "acton-dev"
+aws_profile = "aws-dev"
 aws_region = "us-west-1"
 local_domain_name = "ocp.local"
-username = "jbrady"
-public_key_path = "~/.ssh/aws-jbrady.pub"
+username = "jdoe"
+public_key_path = "~/.ssh/aws-jdoe.pub"
 vpc_cidr = "10.10.0.0/28"
 subnet_cidr = "10.10.0.0/28"
 instance_types = {
@@ -58,7 +58,14 @@ instance_types = {
 }
 ```
 
-2. Plan and apply the Terraform actions:
+2. Create a new EC2 KeyPair. You may also use an existing KeyPair and skip this
+   step.
+
+```bash
+ssh-keygen -t rsa -b 2048 -C "aws-<your username>-ocp" -f <path to create private key>
+```
+
+3. Plan and apply the Terraform actions.
 
 ```bash
 # Plan the actions
@@ -68,17 +75,21 @@ terraform plan -out planfile
 terraform apply planfile
 ```
 
-3. Prepare the nodes
+4. Prepare the nodes
 
 ```bash
-# Set a couple variables
+# Set a few variables
 master=<public ip/name of master>
-privkey=<path to your private key>
+privkey=<path to your new KeyPair private key>
 repourl=<URL of this repo>
 
 # Copy your private key to the master node
 scp -i ${privkey} ${privkey} centos@${master}:~/.ssh/$(basename ${privkey})
+```
 
+5. Checkout and run the Ansible installation playbooks.
+
+```bash
 # SSH into the master node
 ssh -i ${privkey} centos@${master}
 
@@ -97,4 +108,12 @@ ansible-playbook -i inventory.ini prepare.yml --key-file ${privkey}
 ansible-playbook -i inventory.ini ~/openshift-ansible/playbooks/pre --key-file ${privkey}
 ansible-playbook -c paramiko -i inventory.ini ~/openshift-ansible/playbooks/prerequisites.yml --key-file <private key>
 ansible-playbook -c paramiko -i inventory.ini ~/openshift-ansible/playbooks/deploy_cluster.yml --key-file <private key>
+```
+
+6. Add users to the `htpasswd` file
+
+```bash
+htpasswd -b /etc/origin/master/htpasswd developer developer
+oc adm policy add-cluster-role-to-user cluster-admin developer
+systemctl restart origin-master-api
 ```

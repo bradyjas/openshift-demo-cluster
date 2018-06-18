@@ -17,10 +17,6 @@ module "openshift" {
 }
 
 # Outputs
-# output "bastion-public-dns" {
-#   value = "${module.openshift.bastion-public-dns}"
-# }
-
 output "master-public-ip" {
   value = "${module.openshift.master-public-ip}"
 }

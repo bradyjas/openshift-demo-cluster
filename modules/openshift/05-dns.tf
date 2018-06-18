@@ -15,14 +15,6 @@ resource "aws_route53_zone" "ocp_private" {
 }
 
 # Private DNS Records
-# resource "aws_route53_record" "bastion" {
-#   zone_id = "${aws_route53_zone.ocp_private.zone_id}"
-#   name    = "bastion"
-#   type    = "A"
-#   ttl     = 300
-#   records = ["${aws_instance.bastion.private_ip}"]
-# }
-
 resource "aws_route53_record" "master" {
   zone_id = "${aws_route53_zone.ocp_private.zone_id}"
   name    = "master"
