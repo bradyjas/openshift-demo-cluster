@@ -10,11 +10,13 @@ resource "aws_key_pair" "ocp" {
 
 # Master
 resource "aws_instance" "master" {
-  ami                    = "${data.aws_ami.centos7.id}"
-  instance_type          = "${var.instance_types["master"]}"
-  key_name               = "${aws_key_pair.ocp.key_name}"
-  availability_zone      = "${data.aws_availability_zones.available.names[0]}"
-  subnet_id              = "${aws_subnet.ocp.id}"
+  ami               = "${data.aws_ami.centos7.id}"
+  instance_type     = "${var.instance_types["master"]}"
+  key_name          = "${aws_key_pair.ocp.key_name}"
+  availability_zone = "${data.aws_availability_zones.available.names[0]}"
+  subnet_id         = "${aws_subnet.ocp.id}"
+
+  #iam_instance_profile   = "${aws_iam_instance_profile.master.name}"
   vpc_security_group_ids = ["${aws_security_group.master.id}"]
 
   root_block_device {
@@ -35,7 +37,7 @@ resource "aws_instance" "master" {
     runcmd:
     - [ yum, install, -y, epel-release ]
     - [ yum, update, -y ]
-    - [ yum, install, -y , git, ansible ]
+    - [ yum, install, -y , git, ansible, tmux, kernel-devel-$(uname -r) ]
   EOF
 
   tags = "${merge(
@@ -54,26 +56,34 @@ resource "aws_instance" "master" {
 }
 
 # Elastic IP for Master
-resource "aws_eip" "master" {
-  vpc        = true
-  instance   = "${aws_instance.master.id}"
-  depends_on = ["aws_internet_gateway.ocp"]
+# resource "aws_eip" "master" {
+#   vpc        = true
+#   instance   = "${aws_instance.master.id}"
+#   depends_on = ["aws_internet_gateway.ocp"]
 
-  tags = "${merge(
-    local.common_tags,
-    map(
-      "Name", "${var.username}-ocp-eip"
-    )
-  )}"
+#   tags = "${merge(
+#     local.common_tags,
+#     map(
+#       "Name", "${var.username}-ocp-eip"
+#     )
+#   )}"
+# }
+
+# Use already existing Elastic IP for Master
+resource "aws_eip_association" "eip_assoc" {
+  instance_id   = "${aws_instance.master.id}"
+  allocation_id = "eipalloc-9c4c03a0"
 }
 
 # Worker 1
 resource "aws_instance" "worker1" {
-  ami                         = "${data.aws_ami.centos7.id}"
-  instance_type               = "${var.instance_types["worker"]}"
-  key_name                    = "${aws_key_pair.ocp.key_name}"
-  availability_zone           = "${data.aws_availability_zones.available.names[0]}"
-  subnet_id                   = "${aws_subnet.ocp.id}"
+  ami               = "${data.aws_ami.centos7.id}"
+  instance_type     = "${var.instance_types["worker"]}"
+  key_name          = "${aws_key_pair.ocp.key_name}"
+  availability_zone = "${data.aws_availability_zones.available.names[0]}"
+  subnet_id         = "${aws_subnet.ocp.id}"
+
+  # iam_instance_profile        = "${aws_iam_instance_profile.worker.name}"
   vpc_security_group_ids      = ["${aws_security_group.worker.id}"]
   associate_public_ip_address = true
 
@@ -111,11 +121,13 @@ resource "aws_instance" "worker1" {
 
 # Worker 2
 resource "aws_instance" "worker2" {
-  ami                         = "${data.aws_ami.centos7.id}"
-  instance_type               = "${var.instance_types["worker"]}"
-  key_name                    = "${aws_key_pair.ocp.key_name}"
-  availability_zone           = "${data.aws_availability_zones.available.names[0]}"
-  subnet_id                   = "${aws_subnet.ocp.id}"
+  ami               = "${data.aws_ami.centos7.id}"
+  instance_type     = "${var.instance_types["worker"]}"
+  key_name          = "${aws_key_pair.ocp.key_name}"
+  availability_zone = "${data.aws_availability_zones.available.names[0]}"
+  subnet_id         = "${aws_subnet.ocp.id}"
+
+  # iam_instance_profile        = "${aws_iam_instance_profile.worker.name}"
   vpc_security_group_ids      = ["${aws_security_group.worker.id}"]
   associate_public_ip_address = true
 

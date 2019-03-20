@@ -93,7 +93,12 @@ scp -i ${privkey} ${privkey} centos@${master}:~/.ssh/$(basename ${privkey})
 # SSH into the master node
 ssh -i ${privkey} centos@${master}
 
+# Start a `tmux` session incase you lose your Internet connection
+tmux a || tmux new -s main
+
 # Clone this and the OpenShift-Ansible repos
+repourl=<URL of this repo>
+privkey=<path to your new KeyPair private key>
 git clone --depth 1 ${repourl} ~/openshift-demo-cluster
 git clone --depth 1 -b release-3.9 https://github.com/openshift/openshift-ansible.git ~/openshift-ansible
 cd ~/openshift-demo-cluster
@@ -101,19 +106,31 @@ cd ~/openshift-demo-cluster
 # Take a look at the inventory and make and changes needed
 vi inventory.ini
 
-# Run the prepare playbook
-ansible-playbook -i inventory.ini prepare.yml --key-file ${privkey}
+# Run the prepare playbook (takes about 5 minutes on a t2.medium)
+time ansible-playbook -i inventory.ini prepare.yml --key-file ${privkey}
 
-# Run the OpenShift-Ansible playbooks
-ansible-playbook -i inventory.ini ~/openshift-ansible/playbooks/pre --key-file ${privkey}
-ansible-playbook -c paramiko -i inventory.ini ~/openshift-ansible/playbooks/prerequisites.yml --key-file <private key>
-ansible-playbook -c paramiko -i inventory.ini ~/openshift-ansible/playbooks/deploy_cluster.yml --key-file <private key>
+# Run the OpenShift-Ansible playbooks (takes about 2 minutes and 20 minutes,
+# respectively, on a t2.medium)
+time ansible-playbook -c paramiko -i inventory.ini ~/openshift-ansible/playbooks/prerequisites.yml --key-file ${privkey}
+time ansible-playbook -c paramiko -i inventory.ini ~/openshift-ansible/playbooks/deploy_cluster.yml --key-file ${privkey}
 ```
 
 6. Add users to the `htpasswd` file
 
 ```bash
-htpasswd -b /etc/origin/master/htpasswd developer developer
+sudo htpasswd -b /etc/origin/master/htpasswd developer developer
 oc adm policy add-cluster-role-to-user cluster-admin developer
-systemctl restart origin-master-api
+sudo systemctl restart origin-master-api
 ```
+
+master=console.ocp.lowbaud.io
+privkey=~/.ssh/aws-jbrady
+repourl=https://github.com/bradyjas/openshift-demo-cluster.git
+
+
+privkey=~/.ssh/aws-jbrady
+repourl=https://github.com/bradyjas/openshift-demo-cluster.git
+git clone --depth 1 ${repourl} ~/openshift-demo-cluster
+
+If you get "ERROR! |failed expects hostvars is a dict":
+https://github.com/abn/openshift-ansible/commit/b20684b6560ecbe5c68b4412069beb2f24960504
